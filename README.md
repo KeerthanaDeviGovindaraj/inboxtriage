@@ -2,8 +2,6 @@
 
 An AI tool that triages client emails for small accounting and bookkeeping firms. Paste an email, get a category, urgency level, extracted details, and a ready-to-send draft reply — powered by Claude.
 
----
-
 ## Why I built this
 
 I was looking for a workflow that was repetitive, text-heavy, and had a clear output — something where AI could genuinely save time rather than just add novelty. Small accounting firms fit that description well. Their inboxes are a mix of client questions, document requests, billing confusion, and the occasional IRS panic, and every email needs to be read, categorized, and replied to individually. That's hours of work that doesn't require expertise, just attention.
@@ -33,7 +31,7 @@ The tool doesn't try to replace the accountant. It handles the reading-and-routi
 | Language | TypeScript (strict) | Every data shape is typed — the whole triage result, API request/response, store state |
 | Styling | Tailwind CSS | Utility classes, no separate CSS files to maintain |
 | State | Zustand | Simple global state without Redux overhead |
-| AI | Claude via Anthropic SDK | Reliable structured JSON output; haiku is fast and cheap for this use case |
+| AI | Google Gemini SDK | gemini-2.0-flash for fast, reliable structured output |
 | Testing | Vitest + Testing Library | Works with Next.js path aliases out of the box, no extra babel config |
 | Linting | ESLint + Prettier | Consistent style, catches issues before they reach the repo |
 
@@ -67,7 +65,7 @@ inboxtriage/
 │
 ├── lib/
 │   ├── types.ts                    # Single source of truth for all TypeScript interfaces
-│   ├── anthropic.ts                # Server-only: Anthropic client + output validation
+│   ├── anthropic.ts                # Server-only: Gemini client + output validation
 │   ├── prompts.ts                  # System prompt isolated here for easy iteration
 │   ├── samples.ts                  # 5 realistic messy sample emails
 │   └── utils.ts                    # cn(), formatCost(), formatDuration(), extractSubject()
@@ -92,7 +90,7 @@ inboxtriage/
 
 ## Getting started
 
-**Prerequisites:** Node.js 18+, an Anthropic API key from [console.anthropic.com](https://console.anthropic.com)
+**Prerequisites:** Node.js 18+, a Gemini API key from [aistudio.google.com](https://aistudio.google.com/app/apikey)
 
 ```bash
 git clone https://github.com/yourusername/inboxtriage.git
@@ -101,7 +99,7 @@ cd inboxtriage
 npm install
 
 cp .env.example .env.local
-# open .env.local and add your ANTHROPIC_API_KEY
+# open .env.local and add your GEMINI_API_KEY
 
 npm run dev
 # → http://localhost:3000
@@ -131,7 +129,7 @@ npm run validate        # type-check + lint + test — run this before pushing
 
 | Variable | Required | Description |
 |---|---|---|
-| `ANTHROPIC_API_KEY` | ✅ | Your Anthropic API key. Read server-side only — never sent to the browser. |
+| `GEMINI_API_KEY` | ✅ | Your Gemini API key. Read server-side only — never sent to the browser. |
 | `NEXT_PUBLIC_DEFAULT_MODEL` | No | Defaults to `claude-haiku-4-5` |
 
 ---
@@ -145,7 +143,7 @@ npm i -g vercel
 vercel
 ```
 
-Add `ANTHROPIC_API_KEY` in the Vercel dashboard under Settings → Environment Variables. Deployments are automatic on every `git push` if you connect your GitHub repo.
+Add `GEMINI_API_KEY` in the Vercel dashboard under Settings → Environment Variables. Deployments are automatic on every `git push` if you connect your GitHub repo.
 
 ---
 
@@ -153,14 +151,14 @@ Add `ANTHROPIC_API_KEY` in the Vercel dashboard under Settings → Environment V
 
 ### API key security
 
-The Anthropic API key is read exclusively in `app/api/triage/route.ts` via `process.env.ANTHROPIC_API_KEY`. It is never passed to any client component, never included in any `NEXT_PUBLIC_` variable, and never referenced in any file outside `lib/anthropic.ts` and the route handler. This is the correct production pattern — a plain React SPA can't do this.
+The Gemini API key is read exclusively in `app/api/triage/route.ts` via `process.env.GEMINI_API_KEY`. It is never passed to any client component, never included in any `NEXT_PUBLIC_` variable, and never referenced in any file outside `lib/anthropic.ts` and the route handler. This is the correct production pattern — a plain React SPA cannot do this.
 
 ### Separation of concerns
 
 Each layer has one job:
 
 - `lib/types.ts` defines the shapes. Everything else imports from here.
-- `lib/anthropic.ts` talks to the API and validates the response. Nothing else does.
+- `lib/anthropic.ts` talks to the Gemini API and validates the response. Nothing else does.
 - `hooks/useTriage.ts` calls the API route and updates state. Components don't call fetch.
 - `components/` render state. They don't know where the data came from.
 
