@@ -4,6 +4,24 @@ An AI tool that triages client emails for small accounting and bookkeeping firms
 
 > **Try it in 30 seconds — no API key required.** `npm install && npm run dev` opens the full app in [demo mode](#demo-mode) with five realistic sample emails.
 
+---
+
+## Screenshots
+
+> Images live in [`docs/screenshots/`](docs/screenshots/). See that folder's README for the exact filenames and how to capture them.
+
+**The app on load** — stats header, model selector, sample inbox, and the email input panel.
+
+![InboxTriage overview — header with processed/urgency/cost stats, model selector, sample email sidebar, and the email input textarea](docs/screenshots/overview.png)
+
+**A triaged result** — category and urgency badges, confidence score, extracted entities, review flags, and a ready-to-send draft reply with a copy button.
+
+![A triage result card for an IRS-notice email showing high-urgency badge, extracted entities, flags, and a generated draft reply](docs/screenshots/result.png)
+
+**Demo mode** — runs with no API key, using hand-written sample results so the full UI is explorable instantly.
+
+![The demo-mode banner explaining that results are pre-written samples when no API key is set](docs/screenshots/demo-banner.png)
+
 ## Why I built this
 
 I was looking for a workflow that was repetitive, text-heavy, and had a clear output — something where AI could genuinely save time rather than just add novelty. Small accounting firms fit that description well. Their inboxes are a mix of client questions, document requests, billing confusion, and the occasional IRS panic, and every email needs to be read, categorized, and replied to individually. That's hours of work that doesn't require expertise, just attention.
