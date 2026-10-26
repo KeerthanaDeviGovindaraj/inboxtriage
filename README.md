@@ -1,6 +1,8 @@
 # InboxTriage
 
-An AI tool that triages client emails for small accounting and bookkeeping firms. Paste an email, get a category, urgency level, extracted details, and a ready-to-send draft reply — powered by Claude.
+An AI tool that triages client emails for small accounting and bookkeeping firms. Paste an email, get a category, urgency level, extracted details, and a ready-to-send draft reply — powered by OpenAI.
+
+> **Try it in 30 seconds — no API key required.** `npm install && npm run dev` opens the full app in [demo mode](#demo-mode) with five realistic sample emails.
 
 ## Why I built this
 
@@ -31,7 +33,7 @@ The tool doesn't try to replace the accountant. It handles the reading-and-routi
 | Language | TypeScript (strict) | Every data shape is typed — the whole triage result, API request/response, store state |
 | Styling | Tailwind CSS | Utility classes, no separate CSS files to maintain |
 | State | Zustand | Simple global state without Redux overhead |
-| AI | Google Gemini SDK | gemini-2.0-flash for fast, reliable structured output |
+| AI | OpenAI SDK | gpt-4o-mini / gpt-4o with JSON mode for reliable structured output |
 | Testing | Vitest + Testing Library | Works with Next.js path aliases out of the box, no extra babel config |
 | Linting | ESLint + Prettier | Consistent style, catches issues before they reach the repo |
 
@@ -65,7 +67,8 @@ inboxtriage/
 │
 ├── lib/
 │   ├── types.ts                    # Single source of truth for all TypeScript interfaces
-│   ├── anthropic.ts                # Server-only: Gemini client + output validation
+│   ├── openai.ts                   # Server-only: OpenAI client, validation + retry
+│   ├── demo.ts                     # Server-only: canned results for demo mode (no key)
 │   ├── prompts.ts                  # System prompt isolated here for easy iteration
 │   ├── samples.ts                  # 5 realistic messy sample emails
 │   └── utils.ts                    # cn(), formatCost(), formatDuration(), extractSubject()
@@ -73,6 +76,7 @@ inboxtriage/
 ├── __tests__/
 │   ├── utils.test.ts               # Unit tests for utility functions
 │   ├── types.test.ts               # Unit tests for type utilities and constants
+│   ├── openai.test.ts              # Unit tests for triage-result validation + normalisation
 │   └── ResultCard.test.tsx         # Component tests: loading / error / success + copy button
 │
 ├── .env.example                    # Documents required env vars — copy to .env.local
@@ -90,7 +94,7 @@ inboxtriage/
 
 ## Getting started
 
-**Prerequisites:** Node.js 18+, a Gemini API key from [aistudio.google.com](https://aistudio.google.com/app/apikey)
+**Prerequisites:** Node.js 18+. An OpenAI API key is optional — without one, the app runs in [demo mode](#demo-mode).
 
 ```bash
 git clone https://github.com/yourusername/inboxtriage.git
@@ -98,12 +102,26 @@ cd inboxtriage
 
 npm install
 
-cp .env.example .env.local
-# open .env.local and add your GEMINI_API_KEY
-
 npm run dev
-# → http://localhost:3000
+# → http://localhost:3000   (runs in demo mode — no key needed)
 ```
+
+To enable live, model-generated responses, add your key:
+
+```bash
+cp .env.example .env.local
+# open .env.local and add your OPENAI_API_KEY, then restart the dev server
+```
+
+Get a key from [platform.openai.com](https://platform.openai.com/api-keys).
+
+---
+
+## Demo mode
+
+The app runs with **zero configuration**. If no `OPENAI_API_KEY` is set, the triage endpoint returns hand-written sample results instead of calling the model — so the entire UI (classification, entity extraction, flags, draft replies, the copy button, the stats bar) can be explored without a paid API account.
+
+A banner makes it clear when demo mode is active, and each of the five sample emails has a tailored result. Drop a real key into `.env.local` and the same code path switches to live model calls — no other changes needed. The fallback lives in `lib/demo.ts` and the switch happens in `app/api/triage/route.ts`.
 
 ---
 
@@ -129,8 +147,8 @@ npm run validate        # type-check + lint + test — run this before pushing
 
 | Variable | Required | Description |
 |---|---|---|
-| `GEMINI_API_KEY` | ✅ | Your Gemini API key. Read server-side only — never sent to the browser. |
-| `NEXT_PUBLIC_DEFAULT_MODEL` | No | Defaults to `claude-haiku-4-5` |
+| `OPENAI_API_KEY` | Optional | Your OpenAI API key. Read server-side only — never sent to the browser. If omitted, the app runs in demo mode. |
+| `NEXT_PUBLIC_DEFAULT_MODEL` | No | Defaults to `gpt-4o-mini` |
 
 ---
 
@@ -143,7 +161,7 @@ npm i -g vercel
 vercel
 ```
 
-Add `GEMINI_API_KEY` in the Vercel dashboard under Settings → Environment Variables. Deployments are automatic on every `git push` if you connect your GitHub repo.
+Add `OPENAI_API_KEY` in the Vercel dashboard under Settings → Environment Variables. Deployments are automatic on every `git push` if you connect your GitHub repo.
 
 ---
 
@@ -151,32 +169,32 @@ Add `GEMINI_API_KEY` in the Vercel dashboard under Settings → Environment Vari
 
 ### API key security
 
-The Gemini API key is read exclusively in `app/api/triage/route.ts` via `process.env.GEMINI_API_KEY`. It is never passed to any client component, never included in any `NEXT_PUBLIC_` variable, and never referenced in any file outside `lib/anthropic.ts` and the route handler. This is the correct production pattern — a plain React SPA cannot do this.
+The OpenAI API key is read exclusively in `lib/openai.ts` via `process.env.OPENAI_API_KEY`, which is only imported by the server route `app/api/triage/route.ts`. It is never passed to any client component, never included in any `NEXT_PUBLIC_` variable, and never referenced anywhere else. This is the correct production pattern — a plain React SPA cannot do this.
 
 ### Separation of concerns
 
 Each layer has one job:
 
 - `lib/types.ts` defines the shapes. Everything else imports from here.
-- `lib/anthropic.ts` talks to the Gemini API and validates the response. Nothing else does.
+- `lib/openai.ts` talks to the OpenAI API, validates the response, and retries on malformed output. Nothing else does.
 - `hooks/useTriage.ts` calls the API route and updates state. Components don't call fetch.
 - `components/` render state. They don't know where the data came from.
 
-This makes it straightforward to swap the AI provider (only `lib/anthropic.ts` changes), add a new model (only `lib/types.ts` and `lib/anthropic.ts` change), or test components in isolation with mock data.
+This makes it straightforward to swap the AI provider (only `lib/openai.ts` changes), add a new model (only `lib/types.ts` and `lib/openai.ts` change), or test components in isolation with mock data.
 
 ### Prompt reliability
 
-Getting consistent JSON out of claude-haiku required three iterations:
+Getting consistent JSON out of the model relies on three things working together:
 
-1. `"respond in JSON"` → markdown-wrapped output ~30% of the time
-2. `"return ONLY a JSON object"` → cleaner, but haiku sometimes invented categories not in the list
-3. Explicit schema + closed enum for `category` + `"no markdown, no explanation"` at the end → ~97% clean output
+1. OpenAI's JSON mode (`response_format: { type: "json_object" }`) guarantees syntactically valid JSON.
+2. An explicit schema with a closed enum for `category` in the system prompt keeps the model inside the allowed values.
+3. `validateTriageResult()` in `lib/openai.ts` enforces the contract at runtime — category and urgency must be in their enums, `confidence` is clamped to 0-100, and optional entity fields are normalised so the UI never hits `undefined`.
 
-The `validateTriageResult()` function in `lib/anthropic.ts` handles the remaining edge cases by throwing a typed error rather than letting malformed output silently propagate.
+When validation fails (e.g. the model invents a category), `triageEmail()` retries once at a slightly higher temperature before surfacing a typed error — so a single bad generation doesn't become a user-facing failure.
 
 ### Model choice
 
-`claude-haiku-4-5` is the default. At roughly $0.001 per email it costs about $18/year at 50 emails/day. `claude-sonnet-4-5` is noticeably better on complex multi-part questions (entity conversions, estate questions, retirement planning) but costs ~15x more. Both are available in the UI — the right choice depends on email volume and complexity.
+`gpt-4o-mini` is the default — fast and inexpensive, which suits the high-volume, mostly-routine nature of an accounting inbox. `gpt-4o` is noticeably better on complex multi-part questions (entity conversions, estate questions, retirement planning) but costs more per email. Both are available in the UI selector — the right choice depends on email volume and complexity. The "est. cost" stat in the header uses the published per-token rates in `MODEL_META` (`lib/types.ts`).
 
 ---
 
@@ -186,6 +204,6 @@ The `validateTriageResult()` function in `lib/anthropic.ts` handles the remainin
 - **Email client integration** — a Gmail Add-On or Outlook plugin would remove the copy-paste step entirely.
 - **Streaming** — the draft reply currently appears all at once. Streaming it token-by-token would feel faster.
 - **Routing rules** — auto-assign high-urgency items to specific staff members based on category.
-- **Retry logic** — occasional malformed JSON from the model is currently surfaced as an error. A simple retry would handle this transparently.
 - **Rate limiting** — the API route has no rate limiting, which is fine for a single-user tool but would need fixing before a multi-user deployment.
+- **Persistence** — results live in memory only and clear on refresh. A production version would store triaged emails so staff can revisit them.
 

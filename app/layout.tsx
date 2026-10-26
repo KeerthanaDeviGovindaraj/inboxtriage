@@ -24,8 +24,8 @@ const ibmPlexMono = IBM_Plex_Mono({
 export const metadata: Metadata = {
   title: "InboxTriage — AI Email Triage for Accounting Firms",
   description:
-    "Triage client emails in seconds. Classify, extract key details, flag urgent items, and generate professional draft replies — powered by Claude.",
-  keywords: ["accounting", "AI", "email triage", "bookkeeping", "Claude"],
+    "Triage client emails in seconds. Classify, extract key details, flag urgent items, and generate professional draft replies — powered by OpenAI.",
+  keywords: ["accounting", "AI", "email triage", "bookkeeping", "OpenAI"],
 };
 
 export default function RootLayout({

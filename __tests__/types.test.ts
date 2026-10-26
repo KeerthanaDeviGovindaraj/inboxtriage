@@ -15,24 +15,24 @@ import {
 
 describe("estimateCost", () => {
   it("returns 0 for zero-length input", () => {
-    expect(estimateCost("claude-haiku-4-5", 0, 0)).toBe(0);
+    expect(estimateCost("gpt-4o-mini", 0, 0)).toBe(0);
   });
 
-  it("haiku is cheaper than sonnet for the same input", () => {
-    const haikuCost = estimateCost("claude-haiku-4-5", 1000, 400);
-    const sonnetCost = estimateCost("claude-sonnet-4-5", 1000, 400);
-    expect(haikuCost).toBeLessThan(sonnetCost);
+  it("the mini model is cheaper than the full model for the same input", () => {
+    const miniCost = estimateCost("gpt-4o-mini", 1000, 400);
+    const fullCost = estimateCost("gpt-4o", 1000, 400);
+    expect(miniCost).toBeLessThan(fullCost);
   });
 
   it("cost increases with input length", () => {
-    const short = estimateCost("claude-haiku-4-5", 500);
-    const long = estimateCost("claude-haiku-4-5", 5000);
+    const short = estimateCost("gpt-4o-mini", 500);
+    const long = estimateCost("gpt-4o-mini", 5000);
     expect(long).toBeGreaterThan(short);
   });
 
   it("returns a positive number for typical email length", () => {
     // ~1000 char email
-    const cost = estimateCost("claude-haiku-4-5", 1000);
+    const cost = estimateCost("gpt-4o-mini", 1000);
     expect(cost).toBeGreaterThan(0);
     expect(cost).toBeLessThan(0.01); // sanity upper bound
   });

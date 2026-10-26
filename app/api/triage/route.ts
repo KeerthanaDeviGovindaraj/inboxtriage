@@ -3,8 +3,8 @@
  *
  * POST /api/triage
  *
- * Server-side route — the Anthropic API key never reaches the client.
- * Validates input, calls Claude, returns structured result.
+ * Server-side route — the OpenAI API key never reaches the client.
+ * Validates input, calls the model, returns structured result.
  *
  * Request body:  { emailText: string, model: SupportedModel }
  * Response 200:  { result: TriageResult, model, processingMs }
@@ -13,7 +13,8 @@
  */
 
 import { NextRequest, NextResponse } from "next/server";
-import { triageEmail } from "@/lib/anthropic";
+import { triageEmail } from "@/lib/openai";
+import { demoTriage } from "@/lib/demo";
 import { SUPPORTED_MODELS } from "@/lib/types";
 import type {
   TriageRequest,
@@ -60,14 +61,9 @@ class ValidationError extends Error {
 export async function POST(
   req: NextRequest
 ): Promise<NextResponse<TriageResponse | ApiErrorResponse>> {
-  // Check API key is configured on the server
-  if (!process.env.OPENAI_API_KEY) {
-  console.error("OPENAI_API_KEY is not set");
-  return NextResponse.json(
-    { error: "Server configuration error — API key not set" },
-    { status: 500 }
-  );
-}
+  // When no API key is configured, fall back to demo mode rather than failing.
+  // This lets the full UI be explored without a paid OpenAI account.
+  const demoMode = !process.env.OPENAI_API_KEY;
 
   let body: unknown;
   try {
@@ -88,6 +84,22 @@ export async function POST(
   }
 
   const start = Date.now();
+
+  // ── Demo mode: return canned results, no external call ──
+  if (demoMode) {
+    const result = demoTriage(validated.emailText);
+    // Small artificial delay so the loading state is visible, like a real call.
+    await new Promise((r) => setTimeout(r, 600));
+
+    const response: TriageResponse = {
+      result,
+      model: validated.model,
+      processingMs: Date.now() - start,
+      demo: true,
+    };
+
+    return NextResponse.json(response, { status: 200 });
+  }
 
   try {
     const result = await triageEmail(validated.emailText, validated.model);

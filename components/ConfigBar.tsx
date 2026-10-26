@@ -36,8 +36,9 @@ export function ConfigBar() {
       </div>
 
       <p className="font-mono text-[11px] text-[#aaa] pb-[6px]">
-        // api key is set in <code className="text-[#555]">.env.local</code> on
-        the server
+        {"// api key is set in "}
+        <code className="text-[#555]">.env.local</code>
+        {" on the server"}
       </p>
     </div>
   );

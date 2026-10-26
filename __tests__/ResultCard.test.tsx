@@ -3,9 +3,8 @@
  * Component tests for ResultCard — covers loading, error, and success states.
  */
 
-import { describe, it, expect } from "vitest";
-import { render, screen } from "@testing-library/react";
-import userEvent from "@testing-library/user-event";
+import { describe, it, expect, vi } from "vitest";
+import { render, screen, fireEvent, waitFor } from "@testing-library/react";
 import { ResultCard } from "@/components/ResultCard";
 import type { TriageResultItem, TriageResult } from "@/lib/types";
 
@@ -39,7 +38,7 @@ function makeItem(
     emailText: "From: Priya Mehta\nSubject: invoice question + urgent thing\n\nHello...",
     status: "success",
     result: mockResult,
-    model: "claude-haiku-4-5",
+    model: "gpt-4o-mini",
     createdAt: Date.now(),
     ...overrides,
   };
@@ -136,23 +135,25 @@ describe("ResultCard — success state", () => {
 });
 
 describe("ResultCard — copy button", () => {
-  it("shows 'copied!' after clicking and reverts", async () => {
-    // Mock clipboard API
-    Object.assign(navigator, {
-      clipboard: {
-        writeText: vi.fn().mockResolvedValue(undefined),
-      },
+  it("copies the draft reply and shows 'copied!'", async () => {
+    // Mock clipboard. Defined as a configurable property so the spy is tracked.
+    // fireEvent is used instead of userEvent.setup() here because the latter
+    // installs its own clipboard stub that would shadow this mock.
+    const writeText = vi.fn().mockResolvedValue(undefined);
+    Object.defineProperty(navigator, "clipboard", {
+      value: { writeText },
+      writable: true,
+      configurable: true,
     });
 
-    const user = userEvent.setup();
     render(<ResultCard item={makeItem()} />);
 
     const copyBtn = screen.getByRole("button", { name: /copy/i });
-    await user.click(copyBtn);
+    fireEvent.click(copyBtn);
 
-    expect(screen.getByText("copied!")).toBeInTheDocument();
-    expect(navigator.clipboard.writeText).toHaveBeenCalledWith(
-      mockResult.draft_reply
+    expect(writeText).toHaveBeenCalledWith(mockResult.draft_reply);
+    await waitFor(() =>
+      expect(screen.getByText("copied!")).toBeInTheDocument()
     );
   });
 });

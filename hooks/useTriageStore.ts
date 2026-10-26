@@ -23,6 +23,7 @@ interface TriageStore {
   selectedModel: SupportedModel;
   totalCostUsd: number;
   isProcessingAll: boolean;
+  isDemo: boolean;
 
   // ── Derived getters ──────────────────────────────────────────────────────
   processedCount: () => number;
@@ -35,13 +36,15 @@ interface TriageStore {
   setError: (id: string, error: string) => void;
   clearResults: () => void;
   setProcessingAll: (val: boolean) => void;
+  setDemoMode: (val: boolean) => void;
 }
 
 export const useTriageStore = create<TriageStore>((set, get) => ({
   results: [],
-  selectedModel: "claude-haiku-4-5",
+  selectedModel: "gpt-4o-mini",
   totalCostUsd: 0,
   isProcessingAll: false,
+  isDemo: false,
 
   processedCount: () =>
     get().results.filter((r) => r.status === "success").length,
@@ -96,6 +99,8 @@ export const useTriageStore = create<TriageStore>((set, get) => ({
     set({ results: [], totalCostUsd: 0 }),
 
   setProcessingAll: (val) => set({ isProcessingAll: val }),
+
+  setDemoMode: (val) => set({ isDemo: val }),
 }));
 
 /** Convenience selector: model metadata for the currently selected model */

@@ -12,6 +12,7 @@ import { TRIAGE_CATEGORIES } from "./types";
 const CATEGORY_LIST = TRIAGE_CATEGORIES.join(" | ");
 
 export const TRIAGE_SYSTEM_PROMPT = `You are an AI assistant for a small accounting and bookkeeping firm.
+Current date context: assume today is the date the email is received unless the email states otherwise.
 Your job is to triage incoming client emails and generate a professional draft reply.
 
 Return ONLY a valid JSON object. No markdown fences. No explanation. No preamble.

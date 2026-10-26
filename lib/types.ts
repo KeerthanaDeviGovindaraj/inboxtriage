@@ -24,7 +24,7 @@ export type TriageCategory = (typeof TRIAGE_CATEGORIES)[number];
 export const URGENCY_LEVELS = ["high", "medium", "low"] as const;
 export type UrgencyLevel = (typeof URGENCY_LEVELS)[number];
 
-// ── Core result shape (matches the JSON Claude returns) ──────────────────────
+// ── Core result shape (matches the JSON the model returns) ───────────────────
 
 export interface TriageEntities {
   client_name: string | null;
@@ -55,6 +55,8 @@ export interface TriageResponse {
   result: TriageResult;
   model: SupportedModel;
   processingMs: number;
+  /** True when the result came from demo mode (no API key configured). */
+  demo?: boolean;
 }
 
 export interface ApiErrorResponse {
@@ -64,32 +66,31 @@ export interface ApiErrorResponse {
 
 // ── Model config ─────────────────────────────────────────────────────────────
 
-export const SUPPORTED_MODELS = [
-  "claude-haiku-4-5",
-  "claude-sonnet-4-5",
-] as const;
+export const SUPPORTED_MODELS = ["gpt-4o-mini", "gpt-4o"] as const;
 
 export type SupportedModel = (typeof SUPPORTED_MODELS)[number];
 
 export interface ModelMeta {
   label: string;
   description: string;
-  costPer1kInput: number;  // USD
-  costPer1kOutput: number; // USD
+  costPer1kInput: number; // USD per 1K input tokens
+  costPer1kOutput: number; // USD per 1K output tokens
 }
 
+// Prices reflect OpenAI's published rates for the chat models actually called
+// in lib/openai.ts. Update here if OpenAI changes pricing.
 export const MODEL_META: Record<SupportedModel, ModelMeta> = {
-  "claude-haiku-4-5": {
-    label: "Haiku 4.5",
+  "gpt-4o-mini": {
+    label: "GPT-4o mini",
     description: "Fast · cheap · great for most emails",
-    costPer1kInput: 0.00025,
-    costPer1kOutput: 0.00125,
+    costPer1kInput: 0.00015,
+    costPer1kOutput: 0.0006,
   },
-  "claude-sonnet-4-5": {
-    label: "Sonnet 4.5",
+  "gpt-4o": {
+    label: "GPT-4o",
     description: "Smarter · better on complex tax questions",
-    costPer1kInput: 0.003,
-    costPer1kOutput: 0.015,
+    costPer1kInput: 0.0025,
+    costPer1kOutput: 0.01,
   },
 };
 

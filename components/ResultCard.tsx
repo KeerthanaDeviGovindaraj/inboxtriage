@@ -29,7 +29,7 @@ function LoadingCard() {
   return (
     <div className="bg-surface border border-border rounded-[6px] p-4 animate-fade-up">
       <p className="font-mono text-[12px] text-[#aaa] mb-3">
-        // analyzing email...
+        {"// analyzing email..."}
       </p>
       <div className="h-[2px] bg-surface-page rounded-full overflow-hidden">
         <div className="h-full w-[30%] bg-[#1c1c1c] rounded-full animate-sweep" />

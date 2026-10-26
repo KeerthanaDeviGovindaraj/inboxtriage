@@ -45,6 +45,7 @@ export function useTriage() {
           return;
         }
 
+        if (data.demo) store.setDemoMode(true);
         store.setSuccess(id, data.result, data.processingMs ?? Date.now() - start);
       } catch (err) {
         const msg =

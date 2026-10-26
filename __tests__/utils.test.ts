@@ -31,7 +31,9 @@ describe("formatDuration", () => {
   });
 
   it("handles sub-second durations", () => {
-    expect(formatDuration(350)).toBe("0.4s");
+    // 350 / 1000 = 0.35, which toFixed(1) renders as "0.3"
+    expect(formatDuration(350)).toBe("0.3s");
+    expect(formatDuration(450)).toBe("0.5s");
   });
 
   it("appends 's' suffix", () => {

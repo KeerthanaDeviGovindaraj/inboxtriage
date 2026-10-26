@@ -27,11 +27,12 @@ export default function HomePage() {
     SAMPLE_EMAILS[0].id
   );
 
-  const { triage, triageAll, isProcessingAll } = useTriage();
+  const { triage, triageAll } = useTriage();
   const results = useTriageStore((s) => s.results);
   const processedCount = useTriageStore((s) => s.processedCount());
   const highUrgencyCount = useTriageStore((s) => s.highUrgencyCount());
   const totalCost = useTriageStore((s) => s.totalCostUsd);
+  const isDemo = useTriageStore((s) => s.isDemo);
   const clearResults = useTriageStore((s) => s.clearResults);
 
   const isRunning = results.some((r) => r.status === "loading");
@@ -74,7 +75,7 @@ export default function HomePage() {
             AI-powered email triage for accounting &amp; bookkeeping firms
           </p>
           <p className="font-mono text-[11px] text-[#aaa]">
-            // forward-deployed AI engineer project — xylo ai studios
+            {"// forward-deployed AI engineer project — xylo ai studios"}
           </p>
         </div>
 
@@ -87,6 +88,24 @@ export default function HomePage() {
           <Stat value={formatCost(totalCost)} label="est. cost" />
         </div>
       </header>
+
+      {/* ── Demo-mode banner ── */}
+      {isDemo && (
+        <div
+          role="status"
+          className="mb-5 flex items-start gap-2 rounded-[5px] border border-medium-border bg-medium-bg px-3.5 py-2.5"
+        >
+          <span className="font-mono text-[12px] text-medium font-medium">
+            demo mode
+          </span>
+          <p className="text-[12px] text-medium leading-[1.5]">
+            No API key is set, so these are pre-written sample results. Add{" "}
+            <code className="font-mono">OPENAI_API_KEY</code> to{" "}
+            <code className="font-mono">.env.local</code> for live,
+            email-specific responses.
+          </p>
+        </div>
+      )}
 
       {/* ── Config ── */}
       <ConfigBar />
@@ -118,7 +137,7 @@ export default function HomePage() {
           </div>
         ) : (
           <p className="font-mono text-[12px] text-[#aaa] py-6">
-            // results will appear here
+            {"// results will appear here"}
           </p>
         )}
       </section>
